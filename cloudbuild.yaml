@@ -5,7 +5,7 @@ steps:
     args:
       - '-c'
       - |
-        docker build \
+        docker build --verbose \
           -t gcr.io/$PROJECT_ID/seo-analyzer:$COMMIT_SHA \
           -t gcr.io/$PROJECT_ID/seo-analyzer:latest \
           --build-arg ENVIRONMENT=production \
