@@ -273,9 +273,26 @@ def analyze_and_screenshot():
         return jsonify({'status': 'error', 'message': 'Clé API SEObserver non configurée'}), 500
 
     try:
+        app.logger.info(f"=== NOUVELLE DEMANDE ===")
+        app.logger.info(f"Début de l'analyse pour le domaine: {domain}")
+        app.logger.info(f"Clé API: {'Définie' if SEOBSERVER_API_KEY else 'Non définie'}")
+        
         # Créer un répertoire temporaire pour stocker les captures d'écran
         with tempfile.TemporaryDirectory() as temp_dir:
             output_path = os.path.join(temp_dir, 'screenshot.jpg')
+            app.logger.info(f"Dossier temporaire: {temp_dir}")
+            app.logger.info(f"Chemin de sortie: {output_path}")
+            
+            # Vérifier les permissions
+            try:
+                test_file = os.path.join(temp_dir, 'test.txt')
+                with open(test_file, 'w') as f:
+                    f.write('test')
+                os.remove(test_file)
+                app.logger.info("Test d'écriture/réussite dans le dossier temporaire")
+            except Exception as e:
+                app.logger.error(f"Erreur d'accès au dossier temporaire: {str(e)}")
+                raise
 
             # 1. D'abord, obtenir les données d'analyse SEO
             headers = {
@@ -289,12 +306,22 @@ def analyze_and_screenshot():
                 "item_value": domain
             }]
 
-            analysis_response = requests.post(
-                SEOBSERVER_API_URL,
-                headers=headers,
-                json=payload,
-                timeout=30
-            )
+            app.logger.info(f"Envoi de la requête à l'API SEObserver: {SEOBSERVER_API_URL}")
+            app.logger.info(f"Headers: {headers}")
+            app.logger.info(f"Payload: {payload}")
+            
+            try:
+                analysis_response = requests.post(
+                    SEOBSERVER_API_URL,
+                    headers=headers,
+                    json=payload,
+                    timeout=30
+                )
+                app.logger.info(f"Réponse reçue - Status: {analysis_response.status_code}")
+                app.logger.info(f"Contenu de la réponse: {analysis_response.text[:500]}...")  # Limite à 500 caractères
+            except Exception as e:
+                app.logger.error(f"Erreur lors de l'appel à l'API SEObserver: {str(e)}")
+                raise
 
             if analysis_response.status_code != 200:
                 return jsonify({
@@ -360,11 +387,14 @@ def analyze_and_screenshot():
             })
             
     except Exception as e:
-        app.logger.error(f"Erreur inattendue: {str(e)}")
+        import traceback
+        error_trace = traceback.format_exc()
+        app.logger.error(f"=== ERREUR ===\n{error_trace}")
         return jsonify({
             'status': 'error',
             'message': 'Une erreur inattendue est survenue',
-            'details': str(e)
+            'details': str(e),
+            'trace': error_trace.split('\n')
         }), 500
 
 # Endpoint pour servir les images générées
