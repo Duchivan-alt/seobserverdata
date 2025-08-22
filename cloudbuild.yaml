@@ -1,18 +1,26 @@
 steps:
-  # Étape 1 : Construire l'image Docker
+  # Étape 1 : Construire l'image Docker avec la nouvelle syntaxe
   - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build',
-      '-t', 'gcr.io/$PROJECT_ID/seo-analyzer:latest',
-      '--build-arg', 'ENVIRONMENT=production',
-      '--build-arg', 'PORT=8080',
-      '.'
-    ]
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker build \
+          -t gcr.io/$PROJECT_ID/seo-analyzer:$COMMIT_SHA \
+          -t gcr.io/$PROJECT_ID/seo-analyzer:latest \
+          --build-arg ENVIRONMENT=production \
+          --build-arg PORT=8080 \
+          .
     id: 'build'
 
   # Étape 2 : Pousser l'image vers Google Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/seo-analyzer:latest']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker push gcr.io/$PROJECT_ID/seo-analyzer:$COMMIT_SHA
+        docker push gcr.io/$PROJECT_ID/seo-analyzer:latest
     id: 'push'
 
   # Étape 3 : Déployer sur Cloud Run
@@ -23,20 +31,18 @@ steps:
       - 'deploy'
       - 'seo-analyzer'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/seo-analyzer:latest'
-      - '--platform'
-      - 'managed'
-      - '--region'
-      - 'us-central1'
-      - '--port'
-      - '8080'
+      - 'gcr.io/$PROJECT_ID/seo-analyzer:$COMMIT_SHA'
+      - '--platform=managed'
+      - '--region=us-central1'
+      - '--port=8080'
       - '--allow-unauthenticated'
-      - '--set-env-vars'
-      - 'SEOBSERVER_API_KEY=$_SEOBSERVER_API_KEY'
+      - '--set-env-vars=SEOBSERVER_API_KEY=$_SEOBSERVER_API_KEY'
       - '--memory=2Gi'
       - '--cpu=1'
       - '--timeout=300s'
       - '--concurrency=80'
+      - '--min-instances=0'
+      - '--max-instances=3'
     id: 'deploy'
 
 # Images à conserver dans le registre
