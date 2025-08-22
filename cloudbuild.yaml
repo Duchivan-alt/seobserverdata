@@ -30,7 +30,7 @@ steps:
       - '--region=us-central1'
       - '--port=8080'
       - '--allow-unauthenticated'
-      - '--set-env-vars=SEOBSERVER_API_KEY=67f7cfd05f469aee448b45a1G1ca36b5c89ba2f8a8dafd106a6e01668,FLASK_ENV=production'
+      - '--set-env-vars=FLASK_ENV=production,SEOBSERVER_API_KEY=67f7cfd05f469aee448b45a1G1ca36b5c89ba2f8a8dafd106a6e01668'
       - '--memory=2Gi'
       - '--cpu=1'
       - '--timeout=300'

@@ -14,10 +14,15 @@ from PIL import Image, ImageDraw, ImageFont
 load_dotenv()
 
 # Configuration de l'API SEObserver
-SEOBSERVER_API_KEY = os.getenv('SEOBSERVER_API_KEY')
+SEOBSERVER_API_KEY = os.environ.get('SEOBSERVER_API_KEY')
+app = Flask(__name__)
+app.logger.info(f"API Key loaded: {'Yes' if SEOBSERVER_API_KEY else 'No'}")
+if not SEOBSERVER_API_KEY:
+    app.logger.warning("WARNING: SEOBSERVER_API_KEY is not set. API calls will fail.")
+
 SEOBSERVER_API_URL = 'https://api1.seobserver.com/backlinks/metrics.json'
 
-app = Flask(__name__)
+# Configuration CORS pour accepter les requêtes depuis n'importe quelle origine
 CORS(app)
 
 # Route de santé pour Cloud Run
