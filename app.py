@@ -13,12 +13,22 @@ from PIL import Image, ImageDraw, ImageFont
 # Charger les variables d'environnement
 load_dotenv()
 
+app = Flask(__name__)
+
 # Configuration de l'API SEObserver
 SEOBSERVER_API_KEY = os.environ.get('SEOBSERVER_API_KEY')
-app = Flask(__name__)
-app.logger.info(f"API Key loaded: {'Yes' if SEOBSERVER_API_KEY else 'No'}")
+
+# Configuration du logging
+app.logger.setLevel('INFO')
+app.logger.info("=== Démarrage de l'application ===")
+app.logger.info(f"Environnement FLASK_ENV: {os.environ.get('FLASK_ENV', 'non défini')}")
+app.logger.info(f"Clé API chargée: {'Oui' if SEOBSERVER_API_KEY else 'Non'}")
+
 if not SEOBSERVER_API_KEY:
-    app.logger.warning("WARNING: SEOBSERVER_API_KEY is not set. API calls will fail.")
+    app.logger.error("ERREUR: La clé API SEObserver n'est pas configurée")
+    app.logger.error("Veuillez définir la variable d'environnement SEOBSERVER_API_KEY")
+else:
+    app.logger.info(f"Clé API tronquée: {SEOBSERVER_API_KEY[:5]}...{SEOBSERVER_API_KEY[-5:]}")
 
 SEOBSERVER_API_URL = 'https://api1.seobserver.com/backlinks/metrics.json'
 
@@ -430,8 +440,18 @@ def serve_screenshot(filename):
 
 # Point d'entrée principal
 if __name__ == '__main__':
-    # Ce bloc ne s'exécute que si le script est lancé directement (pas avec Gunicorn)
+    # Afficher les variables d'environnement (sans les valeurs sensibles)
+    print("=== Variables d'environnement ===")
+    for key, value in sorted(os.environ.items()):
+        if 'key' in key.lower() or 'secret' in key.lower() or 'token' in key.lower() or 'password' in key.lower():
+            value = '********' if value else 'non défini'
+        print(f"{key}: {value}")
+    print("================================")
+    
     port = int(os.environ.get('PORT', 8080))
-    print(f"Starting Flask app on port {port}")
-    print(f"API Key configured: {'Yes' if SEOBSERVER_API_KEY else 'No'}")
-    app.run(host='0.0.0.0', port=port, debug=False)
+    print(f"\nDémarrage de l'application sur le port {port}")
+    print(f"Clé API configurée: {'Oui' if SEOBSERVER_API_KEY else 'Non'}")
+    if SEOBSERVER_API_KEY:
+        print(f"Clé API (tronquée): {SEOBSERVER_API_KEY[:5]}...{SEOBSERVER_API_KEY[-5:]}")
+    
+    app.run(host='0.0.0.0', port=port, debug=True)

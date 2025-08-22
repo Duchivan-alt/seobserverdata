@@ -27,7 +27,7 @@ steps:
       - 'seo-analyzer'
       - '--image=gcr.io/$PROJECT_ID/seo-analyzer:latest'
       - '--platform=managed'
-      - '--region=us-central1'
+      - '--region=europe-west1'
       - '--port=8080'
       - '--allow-unauthenticated'
       - '--set-env-vars=FLASK_ENV=production,SEOBSERVER_API_KEY=67f7cfd05f469aee448b45a1G1ca36b5c89ba2f8a8dafd106a6e01668'
