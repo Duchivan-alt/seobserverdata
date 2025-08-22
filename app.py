@@ -141,143 +141,316 @@ def analyze_domain():
 
 def create_seo_analysis_image(domain, metrics, output_path):
     """
-    Crée une image des résultats d'analyse SEO avec les 4 métriques demandées :
-    - Domaines référents
-    - Backlinks
-    - Domaines actifs
-    - Domaines en dofollow
-    
-    Les chiffres sont affichés en plein (pas de contour) pour une meilleure lisibilité.
-    
-    Args:
-        domain (str): Le nom de domaine à analyser
-        metrics (dict): Dictionnaire des métriques SEO
-        output_path (str): Chemin de sortie pour l'image générée
-        
-    Returns:
-        bool: True si la création a réussi, False sinon
+    Crée une image des résultats d'analyse SEO avec le design moderne Octave
+    Reproduit le style de la visualisation web en image statique
     """
     try:
-        # Configuration des dimensions et des styles
-        WIDTH = 800
-        HEIGHT = 600
-        CARD_WIDTH = 350
-        CARD_HEIGHT = 200
-        MARGIN = 40
-        CARD_MARGIN = 20
+        # Configuration des dimensions
+        WIDTH = 1200
+        HEIGHT = 800
         
-        # Création de l'image avec fond blanc
+        # Créer l'image avec fond dégradé
         image = Image.new('RGB', (WIDTH, HEIGHT), color='white')
         draw = ImageDraw.Draw(image)
         
-        # Palette de couleurs
+        # Palette de couleurs Octave
         colors = {
-            'primary': (44, 62, 80),      # Bleu foncé
-            'secondary': (52, 152, 219),   # Bleu clair
-            'accent1': (46, 204, 113),     # Vert
-            'accent2': (230, 126, 34),     # Orange
-            'text': (44, 62, 80),          # Texte foncé
-            'background': (245, 246, 250),  # Fond gris clair
-            'white': (255, 255, 255)       # Blanc
+            'primary_blue': (37, 99, 235),       # #2563eb
+            'primary_blue_dark': (30, 64, 175),  # #1e40af
+            'turquoise': (66, 211, 186),         # #42d3ba
+            'green': (34, 197, 94),              # #22c55e
+            'orange': (255, 154, 0),             # #ff9a00
+            'orange_dark': (245, 158, 11),       # #f59e0b
+            'purple': (139, 92, 246),            # #8b5cf6
+            'purple_dark': (168, 85, 247),       # #a855f7
+            'white': (255, 255, 255),
+            'light_gray': (248, 250, 252),       # #f8fafc
+            'medium_gray': (226, 232, 240),      # #e2e8f0
+            'text_dark': (30, 41, 59),           # #1e293b
+            'text_medium': (100, 116, 139),      # #64748b
+            'slate_dark': (51, 65, 85),          # #334155
         }
         
-        # Chargement des polices avec fallback
+        # Créer le dégradé de fond
+        for y in range(HEIGHT):
+            ratio = y / HEIGHT
+            r = int(colors['light_gray'][0] + (colors['medium_gray'][0] - colors['light_gray'][0]) * ratio)
+            g = int(colors['light_gray'][1] + (colors['medium_gray'][1] - colors['light_gray'][1]) * ratio)
+            b = int(colors['light_gray'][2] + (colors['medium_gray'][2] - colors['light_gray'][2]) * ratio)
+            draw.line([(0, y), (WIDTH, y)], fill=(r, g, b))
+        
+        # Ajouter des cercles décoratifs en arrière-plan (très transparents)
+        # Cercle 1
+        circle1_alpha = Image.new('RGBA', (100, 100), (66, 211, 186, 25))
+        image.paste(circle1_alpha, (60, 80), circle1_alpha)
+        
+        # Cercle 2
+        circle2_alpha = Image.new('RGBA', (80, 80), (255, 154, 0, 25))
+        image.paste(circle2_alpha, (WIDTH-140, 160), circle2_alpha)
+        
+        # Cercle 3
+        circle3_alpha = Image.new('RGBA', (120, 120), (139, 92, 246, 25))
+        image.paste(circle3_alpha, (96, HEIGHT-220), circle3_alpha)
+        
+        # Chargement des polices
         try:
-            title_font = ImageFont.truetype('Arial Bold', 28)
-            metric_font = ImageFont.truetype('Arial Bold', 48)
-            label_font = ImageFont.truetype('Arial', 16)
+            title_font = ImageFont.truetype('DejaVuSans-Bold.ttf', 40)
+            subtitle_font = ImageFont.truetype('DejaVuSans.ttf', 18)
+            metric_font = ImageFont.truetype('DejaVuSans-Bold.ttf', 48)
+            label_font = ImageFont.truetype('DejaVuSans.ttf', 18)
+            footer_font = ImageFont.truetype('DejaVuSans.ttf', 14)
+            icon_font = ImageFont.truetype('DejaVuSans-Bold.ttf', 24)
         except:
-            # Fallback si les polices ne sont pas disponibles
+            # Fallback vers police par défaut
             title_font = ImageFont.load_default()
+            subtitle_font = ImageFont.load_default()
             metric_font = ImageFont.load_default()
             label_font = ImageFont.load_default()
+            footer_font = ImageFont.load_default()
+            icon_font = ImageFont.load_default()
         
-        # Dessiner l'en-tête
-        header_height = 100
-        draw.rectangle([0, 0, WIDTH, header_height], fill=colors['primary'])
+        # === HEADER ===
+        header_height = 120
+        header_padding = 40
         
-        # Titre
-        title = f"Analyse SEO - {domain}"
-        title_bbox = draw.textbbox((0, 0), title, font=title_font)
-        title_width = title_bbox[2] - title_bbox[0]
-        title_x = (WIDTH - title_width) // 2
-        title_y = (header_height - (title_bbox[3] - title_bbox[1])) // 2
+        # Fond du header avec dégradé
+        for y in range(header_height):
+            ratio = y / header_height
+            r = int(colors['primary_blue'][0] + (colors['primary_blue_dark'][0] - colors['primary_blue'][0]) * ratio)
+            g = int(colors['primary_blue'][1] + (colors['primary_blue_dark'][1] - colors['primary_blue'][1]) * ratio)
+            b = int(colors['primary_blue'][2] + (colors['primary_blue_dark'][2] - colors['primary_blue'][2]) * ratio)
+            draw.line([(0, y), (WIDTH, y)], fill=(r, g, b))
         
-        draw.text((title_x, title_y), title, fill=colors['white'], font=title_font)
+        # Coins arrondis du header (approximation)
+        corner_radius = 24
+        # Effacer les coins avec la couleur de fond
+        for i in range(corner_radius):
+            for j in range(corner_radius):
+                distance = (i**2 + j**2)**0.5
+                if distance > corner_radius:
+                    # Coin supérieur gauche
+                    draw.point((i, j), fill=colors['light_gray'])
+                    # Coin supérieur droit
+                    draw.point((WIDTH-1-i, j), fill=colors['light_gray'])
         
-        # Définition des métriques à afficher
-        metrics_to_display = [
-            {'key': 'referring_domains', 'label': 'Domaines référents', 'color': colors['secondary']},
-            {'key': 'backlinks', 'label': 'Backlinks', 'color': colors['accent1']},
-            {'key': 'active_domains', 'label': 'Domaines actifs', 'color': colors['accent2']},
-            {'key': 'dofollow_domains', 'label': 'Domaines en dofollow', 'color': (155, 89, 182)}  # Violet
+        # Ajouter des éléments décoratifs au header
+        # Cercle décoratif 1
+        circle_overlay = Image.new('RGBA', (200, 200), (66, 211, 186, 51))
+        image.paste(circle_overlay, (WIDTH-300, -100), circle_overlay)
+        
+        # Cercle décoratif 2
+        circle_overlay2 = Image.new('RGBA', (150, 150), (255, 182, 193, 77))
+        image.paste(circle_overlay2, (-75, 50), circle_overlay2)
+        
+        # Icône de recherche
+        icon_x = header_padding
+        icon_y = 30
+        icon_size = 60
+        
+        # Fond de l'icône
+        icon_bg_color = tuple(int(c * 0.8) for c in colors['primary_blue'])  # Plus sombre
+        draw.ellipse([icon_x, icon_y, icon_x + icon_size, icon_y + icon_size], 
+                     fill=icon_bg_color, outline=colors['white'], width=2)
+        
+        # Loupe
+        loupe_center_x = icon_x + icon_size // 2
+        loupe_center_y = icon_y + icon_size // 2
+        loupe_radius = 12
+        
+        # Cercle de la loupe
+        draw.ellipse([loupe_center_x - loupe_radius, loupe_center_y - loupe_radius,
+                     loupe_center_x + loupe_radius, loupe_center_y + loupe_radius],
+                     outline=colors['white'], width=3)
+        
+        # Manche de la loupe
+        handle_start_x = loupe_center_x + int(loupe_radius * 0.7)
+        handle_start_y = loupe_center_y + int(loupe_radius * 0.7)
+        handle_end_x = loupe_center_x + loupe_radius + 10
+        handle_end_y = loupe_center_y + loupe_radius + 10
+        draw.line([(handle_start_x, handle_start_y), (handle_end_x, handle_end_y)],
+                 fill=colors['white'], width=3)
+        
+        # Texte du header
+        text_x = icon_x + icon_size + 20
+        title_text = "Analyse SEO"
+        draw.text((text_x, 30), title_text, fill=colors['white'], font=title_font)
+        
+        subtitle_text = f"Rapport d'analyse pour {domain}"
+        draw.text((text_x, 75), subtitle_text, fill=colors['white'], font=subtitle_font)
+        
+        # === CARTES MÉTRIQUES ===
+        card_width = 280
+        card_height = 180
+        margin_x = 60
+        margin_y = 40
+        spacing_x = 24
+        spacing_y = 30
+        
+        start_y = header_height + margin_y
+        
+        # Configuration des métriques
+        metrics_config = [
+            {
+                'key': 'referring_domains',
+                'label': 'Domaines référents',
+                'icon': 'D',
+                'color': colors['primary_blue'],
+                'gradient_end': (59, 130, 246),  # #3b82f6
+                'border_color': colors['primary_blue']
+            },
+            {
+                'key': 'backlinks',
+                'label': 'Backlinks totaux',
+                'icon': 'B',
+                'color': colors['turquoise'],
+                'gradient_end': colors['green'],
+                'border_color': colors['turquoise']
+            },
+            {
+                'key': 'active_domains',
+                'label': 'Domaines actifs',
+                'icon': 'A',
+                'color': colors['orange'],
+                'gradient_end': colors['orange_dark'],
+                'border_color': colors['orange']
+            },
+            {
+                'key': 'dofollow_domains',
+                'label': 'Domaines DoFollow',
+                'icon': 'F',
+                'color': colors['purple'],
+                'gradient_end': colors['purple_dark'],
+                'border_color': colors['purple']
+            }
         ]
         
-        # Positionnement des cartes (grille 2x2)
-        for i, metric in enumerate(metrics_to_display):
+        # Dessiner les cartes en grille 2x2
+        for i, metric_config in enumerate(metrics_config):
             row = i // 2
             col = i % 2
             
-            x = MARGIN + col * (CARD_WIDTH + CARD_MARGIN)
-            y = header_height + MARGIN + row * (CARD_HEIGHT + CARD_MARGIN)
+            x = margin_x + col * (card_width + spacing_x)
+            y = start_y + row * (card_height + spacing_y)
             
-            # Dessiner la carte
-            card_rect = [x, y, x + CARD_WIDTH, y + CARD_HEIGHT]
-            draw.rounded_rectangle(card_rect, radius=10, fill=colors['white'], outline=(220, 220, 220), width=1)
+            # Ombre portée
+            shadow_offset = 8
+            shadow_color = (0, 0, 0, 25)
+            shadow_overlay = Image.new('RGBA', (card_width, card_height), shadow_color)
+            image.paste(shadow_overlay, (x + shadow_offset, y + shadow_offset), shadow_overlay)
             
-            # Ajouter une ombre portée
-            shadow_rect = [x + 3, y + 3, x + CARD_WIDTH + 3, y + CARD_HEIGHT + 3]
-            draw.rounded_rectangle(shadow_rect, radius=10, fill=(230, 230, 230))
+            # Fond de la carte
+            draw.rounded_rectangle([x, y, x + card_width, y + card_height],
+                                 radius=20, fill=colors['white'])
             
-            # Placer la carte par-dessus l'ombre
-            draw.rounded_rectangle(card_rect, radius=10, fill=colors['white'], outline=(220, 220, 220), width=1)
+            # Bordure colorée en haut
+            border_height = 6
+            draw.rounded_rectangle([x, y, x + card_width, y + border_height + 15],
+                                 radius=20, fill=metric_config['border_color'])
+            draw.rectangle([x, y + 15, x + card_width, y + border_height + 15],
+                          fill=metric_config['border_color'])
             
-            # Ajouter une barre de couleur en haut
-            draw.rectangle([x, y, x + CARD_WIDTH, y + 5], fill=metric['color'])
+            # Icône avec fond dégradé (approximation)
+            icon_size = 64
+            icon_x = x + 32
+            icon_y = y + 25
             
-            # Afficher la valeur
-            value = str(metrics.get(metric['key'], 0))
+            # Fond coloré de l'icône
+            draw.rounded_rectangle([icon_x, icon_y, icon_x + icon_size, icon_y + icon_size],
+                                 radius=16, fill=metric_config['color'])
+            
+            # Lettre de l'icône
+            icon_letter = metric_config['icon']
+            # Centrer la lettre dans l'icône
+            letter_bbox = draw.textbbox((0, 0), icon_letter, font=icon_font)
+            letter_width = letter_bbox[2] - letter_bbox[0]
+            letter_height = letter_bbox[3] - letter_bbox[1]
+            letter_x = icon_x + (icon_size - letter_width) // 2
+            letter_y = icon_y + (icon_size - letter_height) // 2
+            
+            draw.text((letter_x, letter_y), icon_letter, fill=colors['white'], font=icon_font)
+            
+            # Valeur métrique
+            value = f"{metrics.get(metric_config['key'], 0):,}".replace(',', ' ')
             value_bbox = draw.textbbox((0, 0), value, font=metric_font)
             value_width = value_bbox[2] - value_bbox[0]
-            value_height = value_bbox[3] - value_bbox[1]
+            value_x = x + (card_width - value_width) // 2
+            value_y = y + 95
             
-            value_x = x + (CARD_WIDTH - value_width) // 2
-            value_y = y + 40
+            # Ombre du texte
+            draw.text((value_x + 2, value_y + 2), value, fill=(0, 0, 0, 50), font=metric_font)
+            # Texte principal
+            draw.text((value_x, value_y), value, fill=colors['text_dark'], font=metric_font)
             
-            # Afficher la valeur en plein (sans contour)
-            draw.text((value_x, value_y), value, fill=metric['color'], font=metric_font)
-            
-            # Afficher le label
-            label_bbox = draw.textbbox((0, 0), metric['label'], font=label_font)
+            # Label
+            label_text = metric_config['label']
+            label_bbox = draw.textbbox((0, 0), label_text, font=label_font)
             label_width = label_bbox[2] - label_bbox[0]
+            label_x = x + (card_width - label_width) // 2
+            label_y = value_y + 60
             
-            label_x = x + (CARD_WIDTH - label_width) // 2
-            label_y = value_y + value_height + 10
-            
-            draw.text((label_x, label_y), metric['label'], fill=colors['text'], font=label_font)
+            draw.text((label_x, label_y), label_text, fill=colors['text_medium'], font=label_font)
         
-        # Ajouter un pied de page
-        footer_height = 40
+        # === FOOTER ===
+        footer_height = 60
         footer_y = HEIGHT - footer_height
-        draw.rectangle([0, footer_y, WIDTH, HEIGHT], fill=colors['primary'])
         
-        # Ajouter la date et le copyright
-        date_str = datetime.now().strftime('%d/%m/%Y')
-        copyright_text = f"© {date_str} - Tous droits réservés"
+        # Fond du footer avec dégradé
+        for y in range(footer_y, HEIGHT):
+            ratio = (y - footer_y) / footer_height
+            r = int(colors['text_dark'][0] + (colors['slate_dark'][0] - colors['text_dark'][0]) * ratio)
+            g = int(colors['text_dark'][1] + (colors['slate_dark'][1] - colors['text_dark'][1]) * ratio)
+            b = int(colors['text_dark'][2] + (colors['slate_dark'][2] - colors['text_dark'][2]) * ratio)
+            draw.line([(0, y), (WIDTH, y)], fill=(r, g, b))
         
-        copyright_bbox = draw.textbbox((0, 0), copyright_text, font=label_font)
-        copyright_width = copyright_bbox[2] - copyright_bbox[0]
+        # Coins arrondis du footer
+        for i in range(corner_radius):
+            for j in range(corner_radius):
+                distance = (i**2 + j**2)**0.5
+                if distance > corner_radius:
+                    # Coin inférieur gauche
+                    draw.point((i, HEIGHT-1-j), fill=colors['medium_gray'])
+                    # Coin inférieur droit
+                    draw.point((WIDTH-1-i, HEIGHT-1-j), fill=colors['medium_gray'])
         
-        draw.text(
-            (WIDTH - copyright_width - 20, footer_y + (footer_height - (copyright_bbox[3] - copyright_bbox[1])) // 2),
-            copyright_text,
-            fill=colors['white'],
-            font=label_font
-        )
+        # Ligne décorative colorée en haut du footer
+        gradient_line_height = 3
+        line_colors = [colors['turquoise'], colors['orange'], colors['purple']]
+        section_width = WIDTH // len(line_colors)
+        
+        for i, line_color in enumerate(line_colors):
+            start_x = i * section_width
+            end_x = (i + 1) * section_width if i < len(line_colors) - 1 else WIDTH
+            draw.rectangle([start_x, footer_y, end_x, footer_y + gradient_line_height], 
+                          fill=line_color)
+        
+        # Texte du footer
+        date_str = datetime.now().strftime('%d %B %Y à %H:%M')
+        footer_text1 = f"Généré le {date_str}"
+        footer_text2 = "Powered by Octave SEO"
+        
+        # Centrer le texte
+        text1_bbox = draw.textbbox((0, 0), footer_text1, font=footer_font)
+        text1_width = text1_bbox[2] - text1_bbox[0]
+        text1_x = (WIDTH - text1_width) // 2
+        text1_y = footer_y + 12
+        
+        text2_bbox = draw.textbbox((0, 0), footer_text2, font=footer_font)
+        text2_width = text2_bbox[2] - text2_bbox[0]
+        text2_x = (WIDTH - text2_width) // 2
+        text2_y = footer_y + 32
+        
+        draw.text((text1_x, text1_y), footer_text1, fill=colors['white'], font=footer_font)
+        # "Octave SEO" en couleur turquoise
+        octave_part = "Powered by "
+        octave_bbox = draw.textbbox((0, 0), octave_part, font=footer_font)
+        octave_width = octave_bbox[2] - octave_bbox[0]
+        
+        draw.text((text2_x, text2_y), octave_part, fill=colors['white'], font=footer_font)
+        draw.text((text2_x + octave_width, text2_y), "Octave SEO", fill=colors['turquoise'], font=footer_font)
         
         # Enregistrer l'image
         os.makedirs(os.path.dirname(output_path) or '.', exist_ok=True)
-        image.save(output_path, 'JPEG', quality=95)
+        image.save(output_path, 'PNG', quality=95, optimize=True)
         return True
         
     except Exception as e:
@@ -407,7 +580,7 @@ def analyze_and_screenshot():
 
             # Générer une URL publique pour l'image
             # Note: Cette partie dépend de votre système de stockage
-            # Ici, on retourne simplement un lien vers l'endpoint qui sert l'image
+            # Ici, on retourne simplement un lien vers l'endpoint qui sert l'image on retourne simplement un lien vers l'endpoint qui sert l'image
             image_url = f"{request.host_url.rstrip('/')}/api/screenshot/{os.path.basename(output_path)}"
             
             # Copier le fichier temporaire vers un emplacement accessible
@@ -446,7 +619,7 @@ def serve_screenshot(filename):
             return jsonify({'error': 'Invalid file type'}), 400
             
         # Dans un environnement de production, vous voudrez probablement stocker les images
-        # dans un bucket de stockage cloud et les servir depuis là
+        # dans un bucket de stockage cloud et les servir depuis là 
         return send_from_directory(tempfile.gettempdir(), safe_filename, mimetype='image/jpeg')
     except Exception as e:
         app.logger.error(f"Error serving screenshot: {str(e)}")
