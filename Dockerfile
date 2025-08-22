@@ -28,8 +28,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
     PATH="/opt/venv/bin:$PATH"
 
-# Installer les dépendances système nécessaires pour l'exécution
+# Installer les dépendances système et Google Chrome
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Dépendances système de base
     libgomp1 \
     libglib2.0-0 \
     libnss3 \
@@ -53,16 +54,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     xdg-utils \
     xvfb \
+    # Outils pour installer Chrome
     wget \
     gnupg \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Installer Google Chrome
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg \
+    # Ajout du repo et installation de Chrome
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update \
     && apt-get install -y google-chrome-stable \
+    # Nettoyage
     && rm -rf /var/lib/apt/lists/*
 
 # Copier l'environnement virtuel depuis le builder
