@@ -4,10 +4,10 @@ services:
   web:
     build: .
     ports:
-      - "5000:5000"
+      - "8080:8080"  # Changé de 5000 à 8080
     environment:
       - FLASK_ENV=production
-      - PORT=5000
+      - PORT=8080  # Changé de 5000 à 8080
     env_file:
       - .env
     volumes:
