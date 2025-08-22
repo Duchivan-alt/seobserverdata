@@ -59,6 +59,7 @@ def analyze_domain():
             return jsonify({'error': 'Clé API SEObserver non configurée'}), 500
         
         # Configuration de la requête pour SEObserver
+        print(f"Clé API utilisée: {SEOBSERVER_API_KEY}")
         headers = {
             'X-SEObserver-key': SEOBSERVER_API_KEY,
             'Content-Type': 'application/json',
