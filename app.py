@@ -207,7 +207,7 @@ def create_seo_analysis_image(domain, metrics, output_path):
             metric_font = ImageFont.load_default()
             label_font = ImageFont.load_default()
             footer_font = ImageFont.load_default()
-            icon_font = ImageFont.load_default()
+            icon_font = ImageFont.load_default()  # Garde au cas où
         
         # === HEADER ===
         header_height = 120
@@ -293,7 +293,6 @@ def create_seo_analysis_image(domain, metrics, output_path):
             {
                 'key': 'referring_domains',
                 'label': 'Domaines référents',
-                'icon': 'D',
                 'color': colors['primary_blue'],
                 'gradient_end': (59, 130, 246),  # #3b82f6
                 'border_color': colors['primary_blue']
@@ -301,7 +300,6 @@ def create_seo_analysis_image(domain, metrics, output_path):
             {
                 'key': 'backlinks',
                 'label': 'Backlinks totaux',
-                'icon': 'B',
                 'color': colors['turquoise'],
                 'gradient_end': colors['green'],
                 'border_color': colors['turquoise']
@@ -309,7 +307,6 @@ def create_seo_analysis_image(domain, metrics, output_path):
             {
                 'key': 'active_domains',
                 'label': 'Domaines actifs',
-                'icon': 'A',
                 'color': colors['orange'],
                 'gradient_end': colors['orange_dark'],
                 'border_color': colors['orange']
@@ -317,7 +314,6 @@ def create_seo_analysis_image(domain, metrics, output_path):
             {
                 'key': 'dofollow_domains',
                 'label': 'Domaines DoFollow',
-                'icon': 'F',
                 'color': colors['purple'],
                 'gradient_end': colors['purple_dark'],
                 'border_color': colors['purple']
