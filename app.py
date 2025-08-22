@@ -148,46 +148,34 @@ def create_seo_analysis_image(domain, metrics, output_path):
         image = Image.new('RGB', (width, height), 'white')
         draw = ImageDraw.Draw(image)
         
-        # Charger les polices (essayer Arial, sinon utiliser la police par défaut)
-        try:
-            # Essayer différents chemins pour les polices
-            font_paths = [
-                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-                "Arial.ttf",
-                "Arial Bold.ttf"
-            ]
-            
-            title_font = None
-            for font_path in font_paths:
-                try:
-                    title_font = ImageFont.truetype(font_path, 36)
-                    metric_font = ImageFont.truetype(font_path, 48)
-                    text_font = ImageFont.truetype(font_path, 18)
-                    break
-                except:
-                    continue
-            
-            if not title_font:
-                raise Exception("Aucune police trouvée")
-                
-        except:
-            # Utiliser la police par défaut si aucune police n'est trouvée
-            print("Utilisation de la police par défaut")
-            title_font = ImageFont.load_default()
-            metric_font = ImageFont.load_default()
-            text_font = ImageFont.load_default()
-        
-        # Couleurs
+        # Définir les couleurs
         primary_color = (63, 81, 181)   # Bleu foncé
         secondary_color = (33, 150, 243) # Bleu clair
         text_color = (33, 33, 33)       # Noir
         
-        # Titre
+        # Charger les polices avec des tailles augmentées
+        try:
+            # Essayer d'abord avec Arial
+            title_font = ImageFont.truetype("Arial", 42)  # Taille augmentée
+            metric_label_font = ImageFont.truetype("Arial", 28)  # Taille augmentée
+            metric_font = ImageFont.truetype("Arial", 64)  # Taille augmentée
+        except IOError:
+            # Si Arial n'est pas disponible, essayer avec la police par défaut
+            try:
+                default_font = ImageFont.load_default()
+                title_font = default_font.font_variant(size=42) if hasattr(default_font, 'font_variant') else default_font
+                metric_label_font = default_font.font_variant(size=28) if hasattr(default_font, 'font_variant') else default_font
+                metric_font = default_font.font_variant(size=64) if hasattr(default_font, 'font_variant') else default_font
+            except Exception as e:
+                app.logger.error(f"Erreur lors du chargement des polices: {str(e)}")
+                raise
+        
+        # Dessiner le titre avec plus d'espacement
         title = f"Analyse SEO - {domain}"
         title_bbox = draw.textbbox((0, 0), title, font=title_font)
+        title_width = title_bbox[2] - title_bbox[0]
         draw.text(
-            ((width - (title_bbox[2] - title_bbox[0])) // 2, 40),
+            ((width - title_width) // 2, 60),  # Augmenté le padding vertical de 40 à 60
             title,
             fill=primary_color,
             font=title_font
@@ -241,22 +229,22 @@ def create_seo_analysis_image(domain, metrics, output_path):
                     width=1
                 )
             
-            # Ajouter le label
-            label_bbox = draw.textbbox((0, 0), label, font=text_font)
+            # Dessiner le label avec plus d'espacement
+            label_bbox = draw.textbbox((0, 0), label, font=metric_label_font)
             label_width = label_bbox[2] - label_bbox[0]
             draw.text(
-                (x + (400 - label_width) // 2, y + 30),
+                (x + (400 - label_width) // 2, y + 30),  # Augmenté le padding vertical de 20 à 30
                 label,
                 fill=text_color,
-                font=text_font
+                font=metric_label_font
             )
             
-            # Ajouter la valeur
+            # Dessiner la valeur avec plus d'espacement
             value_str = str(value)
             value_bbox = draw.textbbox((0, 0), value_str, font=metric_font)
             value_width = value_bbox[2] - value_bbox[0]
             draw.text(
-                (x + (400 - value_width) // 2, y + 60),
+                (x + (400 - value_width) // 2, y + 80),  # Augmenté le padding vertical de 60 à 80
                 value_str,
                 fill=primary_color,
                 font=metric_font
@@ -297,6 +285,9 @@ def analyze_and_screenshot():
         app.logger.info(f"=== NOUVELLE DEMANDE ===")
         app.logger.info(f"Début de l'analyse pour le domaine: {domain}")
         app.logger.info(f"Clé API: {'Définie' if SEOBSERVER_API_KEY else 'Non définie'}")
+        
+        # Créer un répertoire temporaire s'il n'existe pas
+        os.makedirs(tempfile.gettempdir(), exist_ok=True)
         
         # Créer un répertoire temporaire pour stocker les captures d'écran
         with tempfile.TemporaryDirectory() as temp_dir:
