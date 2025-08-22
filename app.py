@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_file, make_response
+from flask import Flask, request, jsonify, render_template, send_file, make_response, send_from_directory
 from flask_cors import CORS
 import os
 import requests
@@ -262,15 +262,15 @@ def create_seo_analysis_image(domain, metrics, output_path):
 
 @app.route('/api/analyze/screenshot', methods=['POST'])
 def analyze_and_screenshot():
-    """Endpoint pour analyser un domaine et retourner une capture d'écran du résultat"""
+    """Endpoint pour analyser un domaine et retourner l'URL de l'image générée"""
     data = request.get_json()
     domain = data.get('target')
 
     if not domain:
-        return jsonify({'error': 'Le paramètre "target" est requis'}), 400
+        return jsonify({'status': 'error', 'message': 'Le paramètre "target" est requis'}), 400
 
     if not SEOBSERVER_API_KEY:
-        return jsonify({'error': 'Clé API SEObserver non configurée'}), 500
+        return jsonify({'status': 'error', 'message': 'Clé API SEObserver non configurée'}), 500
 
     try:
         # Créer un répertoire temporaire pour stocker les captures d'écran
@@ -342,29 +342,46 @@ def analyze_and_screenshot():
                     'details': 'L\'image des résultats n\'a pas pu être générée.'
                 }), 500
 
-            # Lire et retourner l'image
-            with open(output_path, 'rb') as f:
-                image_data = f.read()
-
-            response = make_response(image_data)
-            response.headers.set('Content-Type', 'image/jpeg')
-            response.headers.set('Content-Disposition', f'attachment; filename=seo_analysis_{domain}.jpg')
-            return response
-
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"Erreur de connexion: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': 'Erreur de connexion',
-            'details': str(e)
-        }), 500
+            # Générer une URL publique pour l'image
+            # Note: Cette partie dépend de votre système de stockage
+            # Ici, on retourne simplement un lien vers l'endpoint qui sert l'image
+            image_url = f"{request.host_url.rstrip('/')}/api/screenshot/{os.path.basename(output_path)}"
+            
+            # Copier le fichier temporaire vers un emplacement accessible
+            import shutil
+            final_path = os.path.join(tempfile.gettempdir(), os.path.basename(output_path))
+            shutil.copy2(output_path, final_path)
+            
+            return jsonify({
+                'status': 'success',
+                'screenshot_url': image_url,
+                'domain': domain,
+                'metrics': metrics
+            })
+            
     except Exception as e:
-        app.logger.error(f"Erreur lors de la génération de la capture d'écran: {str(e)}")
+        app.logger.error(f"Erreur inattendue: {str(e)}")
         return jsonify({
             'status': 'error',
-            'message': 'Erreur lors de la génération de la capture d\'écran',
+            'message': 'Une erreur inattendue est survenue',
             'details': str(e)
         }), 500
+
+# Endpoint pour servir les images générées
+@app.route('/api/screenshot/<filename>')
+def serve_screenshot(filename):
+    try:
+        # Vérifier que le fichier existe et est sécurisé
+        safe_filename = os.path.basename(filename)
+        if not safe_filename.endswith('.jpg'):
+            return jsonify({'error': 'Invalid file type'}), 400
+            
+        # Dans un environnement de production, vous voudrez probablement stocker les images
+        # dans un bucket de stockage cloud et les servir depuis là
+        return send_from_directory(tempfile.gettempdir(), safe_filename, mimetype='image/jpeg')
+    except Exception as e:
+        app.logger.error(f"Error serving screenshot: {str(e)}")
+        return jsonify({'error': 'Image not found'}), 404
 
 # Point d'entrée principal
 if __name__ == '__main__':
