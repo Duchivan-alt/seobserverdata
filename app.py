@@ -15,20 +15,19 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configuration de l'API SEObserver
-SEOBSERVER_API_KEY = os.environ.get('SEOBSERVER_API_KEY')
+# Configuration de l'API SEObserver - Clé API en dur pour usage interne
+SEOBSERVER_API_KEY = '67f7cfd05f469aee448b45a1G1ca36b5c89ba2f8a8dafd106a6e01668'
 
 # Configuration du logging
 app.logger.setLevel('INFO')
 app.logger.info("=== Démarrage de l'application ===")
 app.logger.info(f"Environnement FLASK_ENV: {os.environ.get('FLASK_ENV', 'non défini')}")
+app.logger.info("Mode: Clé API intégrée (usage interne)")
 app.logger.info(f"Clé API chargée: {'Oui' if SEOBSERVER_API_KEY else 'Non'}")
+app.logger.info(f"Clé API (début): {SEOBSERVER_API_KEY[:5]}...")
 
 if not SEOBSERVER_API_KEY:
-    app.logger.error("ERREUR: La clé API SEObserver n'est pas configurée")
-    app.logger.error("Veuillez définir la variable d'environnement SEOBSERVER_API_KEY")
-else:
-    app.logger.info(f"Clé API tronquée: {SEOBSERVER_API_KEY[:5]}...{SEOBSERVER_API_KEY[-5:]}")
+    app.logger.error("ERREUR CRITIQUE: Aucune clé API n'est configurée")
 
 SEOBSERVER_API_URL = 'https://api1.seobserver.com/backlinks/metrics.json'
 
