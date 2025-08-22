@@ -145,11 +145,24 @@ def create_seo_analysis_image(domain, metrics, output_path):
         
         # Chemins des polices à essayer
         font_paths = [
-            'Arial',
+            'arial.ttf',
             'Arial.ttf',
+            'Arial',
             '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
             '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'
         ]
+        
+        # Trouver une police disponible
+        def get_font(size, default_size=None):
+            for font_path in font_paths:
+                try:
+                    return ImageFont.truetype(font_path, size)
+                except (IOError, OSError):
+                    continue
+            # Retourner la police par défaut si aucune police n'est trouvée
+            if default_size:
+                return ImageFont.load_default().font_variant(size=default_size) if hasattr(ImageFont.load_default(), 'font_variant') else ImageFont.load_default()
+            return ImageFont.load_default()
         
         # Palette de couleurs moderne
         colors = {
@@ -180,20 +193,16 @@ def create_seo_analysis_image(domain, metrics, output_path):
         
         # Charger les polices avec des tailles augmentées
         try:
-            # Essayer d'abord avec Arial
-            title_font = ImageFont.truetype("Arial", 42)  # Taille augmentée
-            metric_label_font = ImageFont.truetype("Arial", 28)  # Taille augmentée
-            metric_font = ImageFont.truetype("Arial", 64)  # Taille augmentée
-        except IOError:
-            # Si Arial n'est pas disponible, essayer avec la police par défaut
-            try:
-                default_font = ImageFont.load_default()
-                title_font = default_font.font_variant(size=42) if hasattr(default_font, 'font_variant') else default_font
-                metric_label_font = default_font.font_variant(size=28) if hasattr(default_font, 'font_variant') else default_font
-                metric_font = default_font.font_variant(size=64) if hasattr(default_font, 'font_variant') else default_font
-            except Exception as e:
-                app.logger.error(f"Erreur lors du chargement des polices: {str(e)}")
-                raise
+            title_font = get_font(42, 42)
+            metric_label_font = get_font(28, 24)
+            metric_font = get_font(64, 48)
+        except Exception as e:
+            app.logger.error(f"Erreur lors du chargement des polices: {str(e)}")
+            # Utiliser les polices par défaut en cas d'erreur
+            default_font = ImageFont.load_default()
+            title_font = default_font
+            metric_label_font = default_font
+            metric_font = default_font
         
         # Dessiner un en-tête avec fond coloré
         header_height = 100
@@ -318,13 +327,18 @@ def create_seo_analysis_image(domain, metrics, output_path):
                 fill=color + (30,)  # Couleur avec transparence
             )
             
-            # Dessiner l'icône
-            draw.text(
-                (icon_x, icon_y),
-                icon,
-                fill=color,
-                font=ImageFont.truetype("Arial", icon_size) if 'Arial' in font_paths else metric_label_font
-            )
+            # Dessiner l'icône avec une police de secours
+            try:
+                icon_font = get_font(icon_size, icon_size) or metric_label_font
+                draw.text(
+                    (icon_x, icon_y),
+                    icon,
+                    fill=color,
+                    font=icon_font
+                )
+            except Exception as e:
+                app.logger.error(f"Erreur lors du dessin de l'icône: {str(e)}")
+                # Continuer même si l'icône ne peut pas être dessinée
             
             # Dessiner le label
             label_upper = label.upper()
