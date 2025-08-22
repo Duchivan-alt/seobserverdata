@@ -8,10 +8,6 @@ import time
 import io
 from datetime import datetime
 from dotenv import load_dotenv
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from PIL import Image, ImageDraw, ImageFont
 
 # Charger les variables d'environnement
@@ -24,10 +20,29 @@ SEOBSERVER_API_URL = 'https://api1.seobserver.com/backlinks/metrics.json'
 app = Flask(__name__)
 CORS(app)
 
+# Route de santé pour Cloud Run
+@app.route('/health')
+def health():
+    return jsonify({'status': 'healthy'}), 200
+
 # Route principale
 @app.route('/')
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except:
+        # Si le template n'existe pas, retourner une page simple
+        return '''
+        <html>
+            <head><title>SEO Analyzer</title></head>
+            <body>
+                <h1>SEO Analyzer API</h1>
+                <p>Application is running!</p>
+                <p>API Key configured: {}</p>
+                <p>Use POST /api/analyze with {"target": "domain.com"}</p>
+            </body>
+        </html>
+        '''.format('Yes' if SEOBSERVER_API_KEY else 'No')
 
 # API pour analyser un domaine
 @app.route('/api/analyze', methods=['POST'])
@@ -38,6 +53,10 @@ def analyze_domain():
             return jsonify({'error': 'Le paramètre target est requis'}), 400
             
         target_domain = data['target'].strip()
+        
+        # Vérifier que la clé API est définie
+        if not SEOBSERVER_API_KEY:
+            return jsonify({'error': 'Clé API SEObserver non configurée'}), 500
         
         # Configuration de la requête pour SEObserver
         headers = {
@@ -96,56 +115,18 @@ def analyze_domain():
         }), status_code
         
     except Exception as e:
+        app.logger.error(f"Erreur inattendue: {str(e)}")
         return jsonify({
             'status': 'error',
             'error': 'Une erreur inattendue est survenue',
             'details': str(e)
         }), 500
 
-def create_mock_screenshot(domain, output_path):
-    """Crée une image de test pour simuler une capture d'écran"""
-    try:
-        # Créer une image blanche
-        width, height = 1200, 800
-        image = Image.new('RGB', (width, height), color='white')
-        draw = ImageDraw.Draw(image)
-        
-        # Essayer d'utiliser une police système
-        try:
-            font = ImageFont.truetype("Arial", 24)
-        except:
-            font = ImageFont.load_default()
-        
-        # Ajouter du texte à l'image
-        text = f"Résultat de l'analyse SEO\nDomaine: {domain}\nDate: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        
-        # Calculer la position pour centrer le texte
-        text_bbox = draw.textbbox((0, 0), text, font=font)
-        text_width = text_bbox[2] - text_bbox[0]
-        text_height = text_bbox[3] - text_bbox[1]
-        x = (width - text_width) // 2
-        y = (height - text_height) // 2
-        
-        # Dessiner le texte
-        draw.text((x, y), text, fill='black', font=font)
-        
-        # Ajouter un cadre
-        draw.rectangle([50, 50, width-50, height-50], outline='blue', width=2)
-        
-        # Enregistrer l'image
-        image.save(output_path, 'JPEG', quality=85)
-        return True
-        
-    except Exception as e:
-        print(f"Erreur dans create_mock_screenshot: {str(e)}")
-        return False
-
 def create_seo_analysis_image(domain, metrics, output_path):
     """Crée une image des résultats d'analyse SEO avec un design moderne et épuré"""
     try:
-        print("Métriques reçues dans create_seo_analysis_image:")
-        for k, v in metrics.items():
-            print(f"{k}: {v}")
+        print(f"Création de l'image pour {domain}")
+        print(f"Métriques reçues: {metrics}")
         
         # Créer une nouvelle image avec fond blanc
         width, height = 1000, 600
@@ -154,10 +135,30 @@ def create_seo_analysis_image(domain, metrics, output_path):
         
         # Charger les polices (essayer Arial, sinon utiliser la police par défaut)
         try:
-            title_font = ImageFont.truetype("Arial Bold.ttf", 36)
-            metric_font = ImageFont.truetype("Arial Bold.ttf", 48)
-            text_font = ImageFont.truetype("Arial.ttf", 18)
+            # Essayer différents chemins pour les polices
+            font_paths = [
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "Arial.ttf",
+                "Arial Bold.ttf"
+            ]
+            
+            title_font = None
+            for font_path in font_paths:
+                try:
+                    title_font = ImageFont.truetype(font_path, 36)
+                    metric_font = ImageFont.truetype(font_path, 48)
+                    text_font = ImageFont.truetype(font_path, 18)
+                    break
+                except:
+                    continue
+            
+            if not title_font:
+                raise Exception("Aucune police trouvée")
+                
         except:
+            # Utiliser la police par défaut si aucune police n'est trouvée
+            print("Utilisation de la police par défaut")
             title_font = ImageFont.load_default()
             metric_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
@@ -207,14 +208,23 @@ def create_seo_analysis_image(domain, metrics, output_path):
             x = 50 + col * 450
             y = y_position + row * 180
             
-            # Dessiner la carte
-            draw.rounded_rectangle(
-                [x, y, x + 400, y + 150],
-                radius=15,
-                fill=card_colors[i],
-                outline=secondary_color,
-                width=1
-            )
+            # Dessiner la carte (utiliser rectangle si rounded_rectangle n'est pas disponible)
+            try:
+                draw.rounded_rectangle(
+                    [x, y, x + 400, y + 150],
+                    radius=15,
+                    fill=card_colors[i],
+                    outline=secondary_color,
+                    width=1
+                )
+            except AttributeError:
+                # Si rounded_rectangle n'est pas disponible, utiliser rectangle normal
+                draw.rectangle(
+                    [x, y, x + 400, y + 150],
+                    fill=card_colors[i],
+                    outline=secondary_color,
+                    width=1
+                )
             
             # Ajouter le label
             label_bbox = draw.textbbox((0, 0), label, font=text_font)
@@ -240,29 +250,13 @@ def create_seo_analysis_image(domain, metrics, output_path):
         # Enregistrer l'image
         os.makedirs(os.path.dirname(output_path) or '.', exist_ok=True)
         image.save(output_path, 'JPEG', quality=95)
+        print(f"Image sauvegardée : {output_path}")
         return True
 
     except Exception as e:
         print(f"Erreur dans create_seo_analysis_image: {str(e)}")
         import traceback
         traceback.print_exc()
-        return False
-
-def take_screenshot(domain, analysis_data, output_path):
-    """Génère une capture d'écran des résultats d'analyse SEO"""
-    try:
-        print("\n=== Données reçues dans take_screenshot ===")
-        print(f"Domaine: {domain}")
-        print("Métriques:", analysis_data)
-        print("Type de analysis_data:", type(analysis_data))
-        if hasattr(analysis_data, 'items'):
-            print("Clés des métriques:", list(analysis_data.keys()))
-        print("Chemin de sortie:", output_path)
-        print("======================================\n")
-        
-        return create_seo_analysis_image(domain, analysis_data, output_path)
-    except Exception as e:
-        print(f"Erreur dans take_screenshot: {str(e)}")
         return False
 
 @app.route('/api/analyze/screenshot', methods=['POST'])
@@ -273,6 +267,9 @@ def analyze_and_screenshot():
 
     if not domain:
         return jsonify({'error': 'Le paramètre "target" est requis'}), 400
+
+    if not SEOBSERVER_API_KEY:
+        return jsonify({'error': 'Clé API SEObserver non configurée'}), 500
 
     try:
         # Créer un répertoire temporaire pour stocker les captures d'écran
@@ -313,22 +310,15 @@ def analyze_and_screenshot():
                 result_data = response_data['data'][0]
                 
                 # 2. Extraire les métriques importantes pour la capture d'écran
-                # S'assurer que toutes les valeurs sont des entiers
                 metrics = {
                     'referring_domains': int(result_data.get('RefDomains', 0)) if result_data.get('RefDomains') is not None else 0,
                     'backlinks': int(result_data.get('ExtBackLinks', 0)) if result_data.get('ExtBackLinks') is not None else 0,
                     'active_domains': int(result_data.get('RefDomainTypeLive', 0)) if result_data.get('RefDomainTypeLive') is not None else 0,
                     'dofollow_domains': int(result_data.get('RefDomainTypeFollow', 0)) if result_data.get('RefDomainTypeFollow') is not None else 0
                 }
-                
-                # Afficher les métriques pour le débogage
-                print("Métriques extraites de l'API SEObserver:")
-                for k, v in metrics.items():
-                    print(f"{k}: {v}")
                     
             except (ValueError, KeyError, IndexError) as e:
-                print(f"Erreur lors de l'extraction des données: {str(e)}")
-                print(f"Réponse de l'API: {analysis_response.text}")
+                app.logger.error(f"Erreur lors de l'extraction des données: {str(e)}")
                 return jsonify({
                     'status': 'error',
                     'message': 'Erreur lors du traitement des données SEO',
@@ -336,7 +326,7 @@ def analyze_and_screenshot():
                 }), 500
 
             # 3. Générer la capture d'écran
-            if not take_screenshot(domain, metrics, output_path):
+            if not create_seo_analysis_image(domain, metrics, output_path):
                 return jsonify({
                     'status': 'error',
                     'message': 'Échec de la génération de l\'image',
@@ -361,12 +351,14 @@ def analyze_and_screenshot():
             return response
 
     except requests.exceptions.RequestException as e:
+        app.logger.error(f"Erreur de connexion: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': 'Erreur de connexion',
             'details': str(e)
         }), 500
     except Exception as e:
+        app.logger.error(f"Erreur lors de la génération de la capture d'écran: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': 'Erreur lors de la génération de la capture d\'écran',
@@ -375,6 +367,8 @@ def analyze_and_screenshot():
 
 # Point d'entrée principal
 if __name__ == '__main__':
-    # Utiliser le port défini par l'environnement Cloud Run, ou 8080 par défaut
+    # Ce bloc ne s'exécute que si le script est lancé directement (pas avec Gunicorn)
     port = int(os.environ.get('PORT', 8080))
+    print(f"Starting Flask app on port {port}")
+    print(f"API Key configured: {'Yes' if SEOBSERVER_API_KEY else 'No'}")
     app.run(host='0.0.0.0', port=port, debug=False)
