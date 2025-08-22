@@ -13,14 +13,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app
 
 # Installer les dépendances système nécessaires pour Pillow et les polices
+# Installer les dépendances système nécessaires
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     python3-dev \
     libjpeg-dev \
     zlib1g-dev \
     libfreetype6-dev \
-    ttf-mscorefonts-installer \
     fontconfig \
+    fonts-dejavu \
+    fonts-liberation \
     && fc-cache -f -v \
     && rm -rf /var/lib/apt/lists/*
 
