@@ -1,0 +1,52 @@
+steps:
+  # Étape 1 : Construire l'image Docker
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'gcr.io/$PROJECT_ID/seo-analyzer:latest',
+      '--build-arg', 'ENVIRONMENT=production',
+      '--build-arg', 'PORT=8080',
+      '.'
+    ]
+    id: 'build'
+
+  # Étape 2 : Pousser l'image vers Google Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/seo-analyzer:latest']
+    id: 'push'
+
+  # Étape 3 : Déployer sur Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'seo-analyzer'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/seo-analyzer:latest'
+      - '--platform'
+      - 'managed'
+      - '--region'
+      - 'us-central1'
+      - '--port'
+      - '8080'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'SEOBSERVER_API_KEY=$_SEOBSERVER_API_KEY'
+      - '--memory=2Gi'
+      - '--cpu=1'
+      - '--timeout=300s'
+      - '--concurrency=80'
+    id: 'deploy'
+
+# Images à conserver dans le registre
+images: ['gcr.io/$PROJECT_ID/seo-analyzer:latest']
+
+# Variables de substitution (à définir dans les déclencheurs Cloud Build)
+substitutions:
+  _SEOBSERVER_API_KEY: ""
+
+# Options de build
+timeout: 1800s  # 30 minutes de délai maximum
+options:
+  logging: CLOUD_LOGGING_ONLY

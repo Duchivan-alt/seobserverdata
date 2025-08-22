@@ -1,0 +1,44 @@
+# Fichiers système
+.git
+.gitignore
+.env
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+
+# Fichiers de développement et de test
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Fichiers de configuration locaux
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Fichiers de logs et bases de données
+*.log
+*.sql
+*.sqlite
+
+# Dossiers inutiles pour la production
+node_modules/
+static/
+tests/
+
+# Fichiers temporaires
+*.swp
+*.swo
+*~
+
+# Fichiers de configuration de l'IDE
+.idea/
+.vscode/
+*.sublime-*

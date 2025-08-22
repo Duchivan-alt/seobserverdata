@@ -1,0 +1,48 @@
+# Fichiers système
+.git
+.gitignore
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environnements virtuels
+venv/
+env/
+ENV/
+
+# Fichiers de configuration locaux
+.env
+.env.local
+.env.*.local
+
+# Fichiers de développement
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Fichiers de test et de couverture
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Fichiers de build et distribution
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Fichiers spécifiques au projet
+.DS_Store
+.env
+seo_analysis_*.jpg
