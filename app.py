@@ -199,7 +199,6 @@ def create_seo_analysis_image(domain, metrics, output_path):
             metric_font = ImageFont.truetype('DejaVuSans-Bold.ttf', 48)
             label_font = ImageFont.truetype('DejaVuSans.ttf', 18)
             footer_font = ImageFont.truetype('DejaVuSans.ttf', 14)
-            icon_font = ImageFont.truetype('DejaVuSans-Bold.ttf', 24)
         except:
             # Fallback vers police par défaut
             title_font = ImageFont.load_default()
@@ -345,32 +344,12 @@ def create_seo_analysis_image(domain, metrics, output_path):
             draw.rectangle([x, y + 15, x + card_width, y + border_height + 15],
                           fill=metric_config['border_color'])
             
-            # Icône avec fond dégradé (approximation)
-            icon_size = 64
-            icon_x = x + 32
-            icon_y = y + 25
-            
-            # Fond coloré de l'icône
-            draw.rounded_rectangle([icon_x, icon_y, icon_x + icon_size, icon_y + icon_size],
-                                 radius=16, fill=metric_config['color'])
-            
-            # Lettre de l'icône
-            icon_letter = metric_config['icon']
-            # Centrer la lettre dans l'icône
-            letter_bbox = draw.textbbox((0, 0), icon_letter, font=icon_font)
-            letter_width = letter_bbox[2] - letter_bbox[0]
-            letter_height = letter_bbox[3] - letter_bbox[1]
-            letter_x = icon_x + (icon_size - letter_width) // 2
-            letter_y = icon_y + (icon_size - letter_height) // 2
-            
-            draw.text((letter_x, letter_y), icon_letter, fill=colors['white'], font=icon_font)
-            
             # Valeur métrique
             value = f"{metrics.get(metric_config['key'], 0):,}".replace(',', ' ')
             value_bbox = draw.textbbox((0, 0), value, font=metric_font)
             value_width = value_bbox[2] - value_bbox[0]
             value_x = x + (card_width - value_width) // 2
-            value_y = y + 95
+            value_y = y + 60
             
             # Ombre du texte
             draw.text((value_x + 2, value_y + 2), value, fill=(0, 0, 0, 50), font=metric_font)
@@ -382,7 +361,7 @@ def create_seo_analysis_image(domain, metrics, output_path):
             label_bbox = draw.textbbox((0, 0), label_text, font=label_font)
             label_width = label_bbox[2] - label_bbox[0]
             label_x = x + (card_width - label_width) // 2
-            label_y = value_y + 60
+            label_y = value_y + 50
             
             draw.text((label_x, label_y), label_text, fill=colors['text_medium'], font=label_font)
         
