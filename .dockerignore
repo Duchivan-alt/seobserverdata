@@ -30,7 +30,6 @@ htmlcov/
 
 # Dossiers inutiles pour la production
 node_modules/
-static/
 tests/
 
 # Fichiers temporaires

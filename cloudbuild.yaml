@@ -1,37 +1,31 @@
 steps:
-  # Étape 1 : Construire l'image Docker avec la nouvelle syntaxe
+  # 1. Construire l'image Docker
   - name: 'gcr.io/cloud-builders/docker'
-    entrypoint: 'bash'
+    id: 'Build'
     args:
-      - '-c'
-      - |
-        docker build --verbose \
-          -t gcr.io/$PROJECT_ID/seo-analyzer:$COMMIT_SHA \
-          -t gcr.io/$PROJECT_ID/seo-analyzer:latest \
-          --build-arg ENVIRONMENT=production \
-          --build-arg PORT=8080 \
-          .
-    id: 'build'
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/seo-analyzer:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/seo-analyzer:latest'
+      - '.'
 
-  # Étape 2 : Pousser l'image vers Google Container Registry
+  # 2. Pousser l'image vers Google Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    entrypoint: 'bash'
+    id: 'Push'
     args:
-      - '-c'
-      - |
-        docker push gcr.io/$PROJECT_ID/seo-analyzer:$COMMIT_SHA
-        docker push gcr.io/$PROJECT_ID/seo-analyzer:latest
-    id: 'push'
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/seo-analyzer:latest'
 
-  # Étape 3 : Déployer sur Cloud Run
+  # 3. Déployer sur Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    id: 'Deploy'
+    entrypoint: 'gcloud'
     args:
       - 'run'
       - 'deploy'
       - 'seo-analyzer'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/seo-analyzer:$COMMIT_SHA'
+      - '--image=gcr.io/$PROJECT_ID/seo-analyzer:latest'
       - '--platform=managed'
       - '--region=us-central1'
       - '--port=8080'
@@ -39,20 +33,14 @@ steps:
       - '--set-env-vars=SEOBSERVER_API_KEY=$_SEOBSERVER_API_KEY'
       - '--memory=2Gi'
       - '--cpu=1'
-      - '--timeout=300s'
-      - '--concurrency=80'
-      - '--min-instances=0'
-      - '--max-instances=3'
-    id: 'deploy'
 
-# Images à conserver dans le registre
-images: ['gcr.io/$PROJECT_ID/seo-analyzer:latest']
+# Pousser l'image après une construction réussie
+images:
+  - 'gcr.io/$PROJECT_ID/seo-analyzer:latest'
 
-# Variables de substitution (à définir dans les déclencheurs Cloud Build)
+# Variables de substitution
 substitutions:
-  _SEOBSERVER_API_KEY: ""
+  _SEOBSERVER_API_KEY: '' # Valeur par défaut, à surcharger dans le trigger
 
-# Options de build
-timeout: 1800s  # 30 minutes de délai maximum
 options:
   logging: CLOUD_LOGGING_ONLY
