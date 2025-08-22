@@ -262,17 +262,24 @@ def create_seo_analysis_image(domain, metrics, output_path):
 
 @app.route('/api/analyze/screenshot', methods=['POST'])
 def analyze_and_screenshot():
-    """Endpoint pour analyser un domaine et retourner l'URL de l'image générée"""
-    data = request.get_json()
-    domain = data.get('target')
-
-    if not domain:
-        return jsonify({'status': 'error', 'message': 'Le paramètre "target" est requis'}), 400
-
-    if not SEOBSERVER_API_KEY:
-        return jsonify({'status': 'error', 'message': 'Clé API SEObserver non configurée'}), 500
-
+    app.logger.info('Received request to /api/analyze/screenshot')
     try:
+        data = request.get_json()
+        app.logger.info(f'Request data: {data}')
+        
+        if not data:
+            app.logger.error('No JSON data received in request')
+            return jsonify({'status': 'error', 'message': 'No data provided'}), 400
+            
+        domain = data.get('target')
+        if not domain:
+            app.logger.error('No target parameter provided')
+            return jsonify({'status': 'error', 'message': 'Le paramètre "target" est requis'}), 400
+            
+        if not SEOBSERVER_API_KEY:
+            app.logger.error('SEOBSERVER_API_KEY is not configured')
+            return jsonify({'status': 'error', 'message': 'Clé API SEObserver non configurée'}), 500
+
         app.logger.info(f"=== NOUVELLE DEMANDE ===")
         app.logger.info(f"Début de l'analyse pour le domaine: {domain}")
         app.logger.info(f"Clé API: {'Définie' if SEOBSERVER_API_KEY else 'Non définie'}")
@@ -386,15 +393,18 @@ def analyze_and_screenshot():
                 'metrics': metrics
             })
             
-    except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        app.logger.error(f"=== ERREUR ===\n{error_trace}")
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f'Request error in analyze_and_screenshot: {str(e)}', exc_info=True)
         return jsonify({
             'status': 'error',
-            'message': 'Une erreur inattendue est survenue',
-            'details': str(e),
-            'trace': error_trace.split('\n')
+            'message': f'Erreur réseau lors de l\'appel à l\'API SEObserver: {str(e)}'
+        }), 500
+    except Exception as e:
+        app.logger.error(f'Unexpected error in analyze_and_screenshot: {str(e)}', exc_info=True)
+        return jsonify({
+            'status': 'error', 
+            'message': 'Erreur interne du serveur',
+            'error_details': str(e)
         }), 500
 
 # Endpoint pour servir les images générées
