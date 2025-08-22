@@ -170,8 +170,8 @@ def create_seo_analysis_image(domain, metrics, output_path):
                 app.logger.error(f"Erreur lors du chargement des polices: {str(e)}")
                 raise
         
-        # Dessiner le titre avec plus d'espacement
-        title = f"Analyse SEO - {domain}"
+        # Dessiner le titre avec plus d'espacement (sans caractères spéciaux)
+        title = f"ANALYSE SEO - {domain.upper()}"
         title_bbox = draw.textbbox((0, 0), title, font=title_font)
         title_width = title_bbox[2] - title_bbox[0]
         draw.text(
@@ -181,15 +181,15 @@ def create_seo_analysis_image(domain, metrics, output_path):
             font=title_font
         )
         
-        # Ligne de séparation
+        # Ligne de separation
         draw.line([(50, 120), (width - 50, 120)], fill=secondary_color, width=2)
         
-        # Position de départ pour les métriques
+        # Position de depart pour les metriques
         y_position = 160
         
-        # Définir les métriques à afficher avec les bonnes clés
+        # Définir les métriques à afficher avec les bonnes clés (sans caractères spéciaux)
         metric_items = [
-            ("DOMAINES RÉFÉRENTS", metrics.get('referring_domains', 0)),
+            ("DOMAINES REFERENTS", metrics.get('referring_domains', 0)),
             ("BACKLINKS", metrics.get('backlinks', 0)),
             ("DOMAINES ACTIFS", metrics.get('active_domains', 0)),
             ("DOMAINES DOFOLLOW", metrics.get('dofollow_domains', 0))
@@ -229,25 +229,32 @@ def create_seo_analysis_image(domain, metrics, output_path):
                     width=1
                 )
             
-            # Dessiner le label avec plus d'espacement
-            label_bbox = draw.textbbox((0, 0), label, font=metric_label_font)
+            # Dessiner le label en majuscules et sans accents
+            label_upper = label.upper()
+            label_bbox = draw.textbbox((0, 0), label_upper, font=metric_label_font)
             label_width = label_bbox[2] - label_bbox[0]
             draw.text(
-                (x + (400 - label_width) // 2, y + 30),  # Augmenté le padding vertical de 20 à 30
-                label,
+                (x + (400 - label_width) // 2, y + 30),
+                label_upper,
                 fill=text_color,
-                font=metric_label_font
+                font=metric_label_font,
+                stroke_width=1,
+                stroke_fill=text_color
             )
             
-            # Dessiner la valeur avec plus d'espacement
+            # Dessiner la valeur avec contour pour meilleure lisibilite
             value_str = str(value)
             value_bbox = draw.textbbox((0, 0), value_str, font=metric_font)
             value_width = value_bbox[2] - value_bbox[0]
+            
+            # Dessiner un contour autour du texte pour ameliorer la lisibilite
             draw.text(
-                (x + (400 - value_width) // 2, y + 80),  # Augmenté le padding vertical de 60 à 80
+                (x + (400 - value_width) // 2, y + 80),
                 value_str,
                 fill=primary_color,
-                font=metric_font
+                font=metric_font,
+                stroke_width=2,
+                stroke_fill=(255, 255, 255)  # Contour blanc
             )
             
         # Enregistrer l'image
