@@ -143,15 +143,40 @@ def create_seo_analysis_image(domain, metrics, output_path):
         print(f"Création de l'image pour {domain}")
         print(f"Métriques reçues: {metrics}")
         
-        # Créer une nouvelle image avec fond blanc
-        width, height = 1000, 600
-        image = Image.new('RGB', (width, height), 'white')
+        # Chemins des polices à essayer
+        font_paths = [
+            'Arial',
+            'Arial.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'
+        ]
+        
+        # Palette de couleurs moderne
+        colors = {
+            'primary': (41, 128, 185),    # Bleu moderne
+            'secondary': (52, 152, 219),  # Bleu clair
+            'accent': (46, 204, 113),     # Vert vif
+            'background': (247, 249, 252), # Gris très clair
+            'card_bg': (255, 255, 255),   # Blanc pur
+            'text_primary': (44, 62, 80),  # Bleu foncé pour le texte
+            'text_secondary': (127, 140, 141),  # Gris pour le texte secondaire
+            'success': (46, 204, 113),     # Vert
+            'warning': (241, 196, 15),     # Jaune
+            'danger': (231, 76, 60)        # Rouge
+        }
+        
+        # Créer une nouvelle image avec fond dégradé
+        width, height = 1000, 700
+        image = Image.new('RGB', (width, height), colors['background'])
         draw = ImageDraw.Draw(image)
         
-        # Définir les couleurs
-        primary_color = (63, 81, 181)   # Bleu foncé
-        secondary_color = (33, 150, 243) # Bleu clair
-        text_color = (33, 33, 33)       # Noir
+        # Ajouter un dégradé de fond
+        for i in range(height):
+            # Dégradé léger du haut vers le bas
+            r = int(colors['background'][0] + (255 - colors['background'][0]) * (i / height))
+            g = int(colors['background'][1] + (255 - colors['background'][1]) * (i / height))
+            b = int(colors['background'][2] + (255 - colors['background'][2]) * (i / height))
+            draw.line([(0, i), (width, i)], fill=(r, g, b))
         
         # Charger les polices avec des tailles augmentées
         try:
@@ -170,91 +195,174 @@ def create_seo_analysis_image(domain, metrics, output_path):
                 app.logger.error(f"Erreur lors du chargement des polices: {str(e)}")
                 raise
         
-        # Dessiner le titre avec plus d'espacement (sans caractères spéciaux)
+        # Dessiner un en-tête avec fond coloré
+        header_height = 100
+        draw.rectangle([0, 0, width, header_height], fill=colors['primary'])
+        
+        # Ajouter un effet de vague subtil en bas de l'en-tête
+        for i in range(10):
+            y = header_height - i
+            alpha = int(255 * (1 - i/10))
+            draw.line([(0, y), (width, y)], fill=colors['primary'] + (alpha,), width=1)
+        
+        # Dessiner le titre
         title = f"ANALYSE SEO - {domain.upper()}"
         title_bbox = draw.textbbox((0, 0), title, font=title_font)
         title_width = title_bbox[2] - title_bbox[0]
+        
+        # Ombre portée pour le titre
         draw.text(
-            ((width - title_width) // 2, 60),  # Augmenté le padding vertical de 40 à 60
+            ((width - title_width) // 2 + 2, 42),  # Position de l'ombre
             title,
-            fill=primary_color,
+            fill=(0, 0, 0, 100),
             font=title_font
         )
         
-        # Ligne de separation
-        draw.line([(50, 120), (width - 50, 120)], fill=secondary_color, width=2)
+        # Titre principal
+        draw.text(
+            ((width - title_width) // 2, 40),
+            title,
+            fill=(255, 255, 255),  # Blanc
+            font=title_font,
+            stroke_width=1,
+            stroke_fill=(255, 255, 255, 50)
+        )
         
-        # Position de depart pour les metriques
-        y_position = 160
+        # Position de départ pour les métriques avec plus d'espace
+        y_position = 140
         
-        # Définir les métriques à afficher avec les bonnes clés (sans caractères spéciaux)
+        # Définir les métriques avec des icônes et des couleurs
         metric_items = [
-            ("DOMAINES REFERENTS", metrics.get('referring_domains', 0)),
-            ("BACKLINKS", metrics.get('backlinks', 0)),
-            ("DOMAINES ACTIFS", metrics.get('active_domains', 0)),
-            ("DOMAINES DOFOLLOW", metrics.get('dofollow_domains', 0))
+            ("DOMAINES REFERENTS", metrics.get('referring_domains', 0), "🌐", colors['primary']),
+            ("BACKLINKS", metrics.get('backlinks', 0), "🔗", colors['accent']),
+            ("DOMAINES ACTIFS", metrics.get('active_domains', 0), "✅", colors['success']),
+            ("DOMAINES DOFOLLOW", metrics.get('dofollow_domains', 0), "🔍", colors['warning'])
         ]
         
-        # Couleurs des cartes
-        card_colors = [
-            (232, 244, 253),  # Bleu clair
-            (232, 245, 233),  # Vert clair
-            (255, 243, 224),  # Orange clair
-            (252, 232, 230)   # Rouge clair
-        ]
+        # Style des cartes
+        card_style = {
+            'padding': 25,
+            'spacing': 30,
+            'corner_radius': 15,
+            'shadow_offset': (3, 3),
+            'shadow_blur': 10
+        }
         
-        # Afficher les métriques dans une grille 2x2
-        for i, (label, value) in enumerate(metric_items):
-            # Position de la carte
+        # Afficher les métriques dans une grille 2x2 avec style amélioré
+        card_width = 450
+        card_height = 200
+        for i, (label, value, icon, color) in enumerate(metric_items):
+            # Position de la carte avec espacement
             row = i // 2
             col = i % 2
-            x = 50 + col * 450
-            y = y_position + row * 180
+            x = 50 + col * (card_width + card_style['spacing'])
+            y = y_position + row * (card_height + card_style['spacing'])
             
-            # Dessiner la carte (utiliser rectangle si rounded_rectangle n'est pas disponible)
+            # Ombre portée
+            shadow = (x + card_style['shadow_offset'][0], 
+                     y + card_style['shadow_offset'][1], 
+                     x + card_width - card_style['shadow_offset'][0], 
+                     y + card_height - card_style['shadow_offset'][1])
+            
+            # Dessiner l'ombre
+            shadow_layer = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+            shadow_draw = ImageDraw.Draw(shadow_layer)
+            shadow_draw.rounded_rectangle(
+                shadow,
+                radius=card_style['corner_radius'],
+                fill=(0, 0, 0, 30)  # Noir avec transparence
+            )
+            image = Image.alpha_composite(image.convert('RGBA'), shadow_layer).convert('RGB')
+            draw = ImageDraw.Draw(image)
+            
+            # Dessiner la carte avec bordure arrondie
             try:
                 draw.rounded_rectangle(
-                    [x, y, x + 400, y + 150],
-                    radius=15,
-                    fill=card_colors[i],
-                    outline=secondary_color,
+                    [x, y, x + card_width - card_style['shadow_offset'][0], 
+                     y + card_height - card_style['shadow_offset'][1]],
+                    radius=card_style['corner_radius'],
+                    fill=colors['card_bg'],
+                    outline=(220, 220, 220),
                     width=1
                 )
             except AttributeError:
-                # Si rounded_rectangle n'est pas disponible, utiliser rectangle normal
                 draw.rectangle(
-                    [x, y, x + 400, y + 150],
-                    fill=card_colors[i],
-                    outline=secondary_color,
+                    [x, y, x + card_width - card_style['shadow_offset'][0], 
+                     y + card_height - card_style['shadow_offset'][1]],
+                    fill=colors['card_bg'],
+                    outline=(220, 220, 220),
                     width=1
                 )
+                
+            # Ajouter un effet de dégradé subtil
+            for j in range(10):
+                alpha = int(100 * (1 - j/10))
+                draw.line(
+                    [(x + j*2, y), (x + j*2, y + card_height - card_style['shadow_offset'][1])], 
+                    fill=color + (alpha,)
+                )
             
-            # Dessiner le label en majuscules et sans accents
-            label_upper = label.upper()
-            label_bbox = draw.textbbox((0, 0), label_upper, font=metric_label_font)
-            label_width = label_bbox[2] - label_bbox[0]
-            draw.text(
-                (x + (400 - label_width) // 2, y + 30),
-                label_upper,
-                fill=text_color,
-                font=metric_label_font,
-                stroke_width=1,
-                stroke_fill=text_color
+            # Dessiner l'icône
+            icon_size = 30
+            icon_x = x + card_style['padding']
+            icon_y = y + card_style['padding']
+            
+            # Cercle de fond pour l'icône
+            icon_bg_size = icon_size + 10
+            icon_bg_x = icon_x - 5
+            icon_bg_y = icon_y - 5
+            
+            draw.ellipse(
+                [icon_bg_x, icon_bg_y, 
+                 icon_bg_x + icon_bg_size, icon_bg_y + icon_bg_size],
+                fill=color + (30,)  # Couleur avec transparence
             )
             
-            # Dessiner la valeur avec contour pour meilleure lisibilite
+            # Dessiner l'icône
+            draw.text(
+                (icon_x, icon_y),
+                icon,
+                fill=color,
+                font=ImageFont.truetype("Arial", icon_size) if 'Arial' in font_paths else metric_label_font
+            )
+            
+            # Dessiner le label
+            label_upper = label.upper()
+            label_bbox = draw.textbbox((0, 0), label_upper, font=metric_label_font)
+            label_x = x + card_style['padding'] + icon_bg_size + 10
+            label_y = y + card_style['padding'] + (icon_size - label_bbox[3]) // 2
+            
+            draw.text(
+                (label_x, label_y),
+                label_upper,
+                fill=colors['text_primary'],
+                font=metric_label_font
+            )
+            
+            # Dessiner la valeur avec style
             value_str = str(value)
             value_bbox = draw.textbbox((0, 0), value_str, font=metric_font)
-            value_width = value_bbox[2] - value_bbox[0]
+            value_x = x + card_width - card_style['padding'] - value_bbox[2]
+            value_y = y + card_height - card_style['padding'] - value_bbox[3] - 10
             
-            # Dessiner un contour autour du texte pour ameliorer la lisibilite
+            # Ajouter un fond semi-transparent pour la valeur
+            padding = 15
+            draw.rounded_rectangle(
+                [value_x - padding, value_y - padding // 2,
+                 x + card_width - card_style['padding'] + padding, 
+                 y + card_height - card_style['padding'] + padding // 2],
+                radius=10,
+                fill=color + (20,)  # Couleur avec transparence
+            )
+            
+            # Dessiner la valeur
             draw.text(
-                (x + (400 - value_width) // 2, y + 80),
+                (value_x, value_y),
                 value_str,
-                fill=primary_color,
+                fill=color,
                 font=metric_font,
-                stroke_width=2,
-                stroke_fill=(255, 255, 255)  # Contour blanc
+                stroke_width=1,
+                stroke_fill=(255, 255, 255, 150)
             )
             
         # Enregistrer l'image
